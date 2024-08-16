@@ -2,10 +2,9 @@
 name: Production Deployment
 
 on:
-  workflow_run:
-    workflows: ["Staging Deployment"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
 
 jobs:
   ssh-command:
