@@ -1,19 +1,27 @@
-# .github/workflows/production-deploy.yml
-name: Production Deployment
+# .github/workflows/custom-approval.yml
+name: Custom Approval Deployment
 
 on:
   push:
     branches:
       - main
 
-on:
-  workflow_dispatch:
-
 jobs:
-  deploy:
+  approval:
     runs-on: ubuntu-latest
+    steps:
+      - name: Await approval
+        run: |
+          echo "Please approve the deployment by setting the APPROVE_DEPLOYMENT secret to 'true'"
+        env:
+          APPROVE_DEPLOYMENT: ${{ secrets.APPROVE_DEPLOYMENT }}
+
+  deploy:
+    needs: approval
+    runs-on: ubuntu-latest
+    if: needs.approval.outputs.APPROVE_DEPLOYMENT == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Deploy
-        run: echo "Deploying manually"
+        run: echo "Deploying after approval"
