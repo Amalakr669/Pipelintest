@@ -8,34 +8,24 @@ jobs:
   approval:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if PR is from a release branch
+      - name: Check if PR is from specified branch
         id: check_branch
         run: |
-          if [[ "${{ github.head_ref }}" != release/* ]]; then
-            echo "Not a release branch. Exiting."
+          if [[ "${{ github.head_ref }}" != "release/*" ]]; then
+            echo "Not the specified branch. Exiting."
             exit 1
           fi
 
       - name: Request manual approval
         id: manual_approval
-        uses: actions/github-script@v6
+        uses: peter-evans/manual-approval@v2
         with:
-          script: |
-            const prNumber = process.env.GITHUB_REF.split('/').pop();
-            const approvalMessage = 'Please approve this PR to trigger the pipeline.';
-            await github.rest.pulls.createReview({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-              event: 'REQUEST_CHANGES',
-              body: approvalMessage,
-            });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          reviewers: '["Amalakr669"]'
+          message: 'Please approve this PR to trigger the pipeline.'
 
   pipeline:
     needs: approval
-    if: ${{ github.event.pull_request.draft == false }}
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
