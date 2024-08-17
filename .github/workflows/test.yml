@@ -1,20 +1,52 @@
-name: Deploy to Production
+name: CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
-  deploy:
+  approval:
     runs-on: ubuntu-latest
-    environment: production  # Specify the environment name here
+    steps:
+      - name: Check if PR is from a release branch
+        id: check_branch
+        run: |
+          if [[ "${{ github.head_ref }}" != release/* ]]; then
+            echo "Not a release branch. Exiting."
+            exit 1
+          fi
 
+      - name: Request manual approval
+        id: manual_approval
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = process.env.GITHUB_REF.split('/').pop();
+            const approvalMessage = 'Please approve this PR to trigger the pipeline.';
+            await github.rest.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              event: 'REQUEST_CHANGES',
+              body: approvalMessage,
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pipeline:
+    needs: approval
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to Production
+      - name: Run tests
         run: |
-          echo "Deploying to Production..."
-          # Add your deployment script/commands here
+          echo "Running tests..."
+          # Add your testing commands here
+
+      - name: Deploy
+        run: |
+          echo "Deploying..."
+          # Add your deployment commands here
