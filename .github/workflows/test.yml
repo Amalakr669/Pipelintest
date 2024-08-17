@@ -2,41 +2,42 @@ name: CI/CD Pipeline
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    branches:
+      - 'release/*'
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
-  approval:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Check if PR is from specified branch
-        id: check_branch
-        run: |
-          if [[ "${{ github.head_ref }}" != "release/*" ]]; then
-            echo "Not the specified branch. Exiting."
-            exit 1
-          fi
-
-      - name: Request manual approval
-        id: manual_approval
-        uses: peter-evans/manual-approval@v2
-        with:
-          reviewers: '["Amalakr669"]'
-          message: 'Please approve this PR to trigger the pipeline.'
-
-  pipeline:
-    needs: approval
-    if: ${{ github.event.pull_request.merged == true }}
-    runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
       - name: Run tests
-        run: |
-          echo "Running tests..."
-          # Add your testing commands here
+        run: npm test
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Deploy
         run: |
-          echo "Deploying..."
-          # Add your deployment commands here
+          echo "Deploying to production..."
+          # Add your deployment script/commands here
