@@ -1,0 +1,46 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: 'Deploy all branches'
+        required: false
+        default: 'false'
+        type: boolean
+      branch:
+        description: 'Select the branch to deploy'
+        required: true
+        type: string
+        default: 'main'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.inputs.branch }}
+        
+    - name: Set up Node.js (example)
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run build
+      run: npm run build
+      
+    - name: Deploy to Staging
+      run: |
+        if [ "${{ github.event.inputs.deploy_all }}" = "true" ]; then
+          echo "Deploying all branches..."
+          # Add your logic to deploy all branches if required
+        else
+          echo "Deploying branch ${{ github.event.inputs.branch }}..."
+          # Add your logic to deploy the selected branch
+        fi
